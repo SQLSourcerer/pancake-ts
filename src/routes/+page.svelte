@@ -6,16 +6,38 @@
 	import { MotionProfile } from '$lib/model/motion-profile';
 	import SvgLine from '$lib/components/SvgLine.svelte';
 	import Svg from '$lib/components/Svg.svelte';
+	import Grid from '$lib/components/Grid.svelte';
+	import Quadtree from '$lib/components/Quadtree.svelte';
+	import Point from '$lib/components/Point.svelte';
 
-	let maxAccel = 0.01;
-	let maxVelocity = 2;
-	let distance = 4300;
-	let startingVelocity = 800;
+	let maxAccel = 300;
+	let maxVelocity = 400;
+	let distance = 3300;
+	let startingVelocity = 200;
 
-	$: profile = new MotionProfile(maxAccel,maxVelocity,distance,startingVelocity);
-	$: time = profile.totalProfileTime;
-	$: maxy = profile.profileVelocity(time/2.0);
-	$: data = [...Array(Math.round(time * 10)).keys()].map(k=>k/10.0).map(t=>({time:t,velocity:profile.profileVelocity(t)}))
+	const minx = 0;
+
+	$: profile = new MotionProfile(maxAccel, maxVelocity, distance, startingVelocity);
+	$: time = Math.ceil(profile.totalProfileTime);
+	$: samples = Math.ceil(Math.ceil(200 / time) / 5) * 5 * time;
+	$: maxx = time;
+	$: maxy = profile.profileVelocity(time / 2.0) * 1.05;
+	$: posfactor =
+		profile.profileVelocity(time / 2.0) / profile.profilePosition(profile.totalProfileTime);
+	//$: maxy = profile.profilePosition(profile.totalProfileTime);
+	//$: data = [...Array(Math.round(time * 10)).keys()].map(k=>k/10.0).map(t=>({time:t,velocity:profile.profileVelocity(t)}))
+	$: data = [...Array(samples).keys()]
+		.map((k) => (Math.ceil(time) * k) / samples)
+		.map((t) => ({
+			time: t,
+			velocity: profile.profileVelocity(t),
+			position: profile.profilePosition(t),
+			acceleration: profile.profileAccel(t)
+		}));
+
+	const pc = (x: number) => {
+		return (100 * (x - minx)) / (maxx - minx);
+	};
 </script>
 
 <svelte:head>
@@ -60,35 +82,80 @@
 </section> -->
 <label>
 	Max Accel:
-	<input type="text" bind:value={maxAccel} /></label>
+	<input type="text" bind:value={maxAccel} /></label
+>
 <br />
-	<label>
-		Max velocity:
-		<input type="text" bind:value={maxVelocity} /></label>
-		<br />
-		<label>
-			Distance:
-			<input type="text" bind:value={distance} /></label>
+<label>
+	Max velocity:
+	<input type="text" bind:value={maxVelocity} /></label
+>
+<br />
+<label>
+	Distance:
+	<input type="text" bind:value={distance} /></label
+>
 
-			<br />
-			<label>
-				Starting velocity:
-				<input type="text" bind:value={startingVelocity} /></label>
+<br />
+<label>
+	Starting velocity:
+	<input type="text" bind:value={startingVelocity} /></label
+>
+<br />
+<br />
 
-<div class="chart"><Chart x1={0} x2={time} y1={0} y2={maxy}>
-	<Svg><SvgLine {data}
-	x={p=>p.time}
-	y={p=>p.velocity}
-	let:d
-	>
-<path class="velocity" {d} />
-</SvgLine></Svg>
+Total time: {+profile.totalProfileTime.toFixed(4)}<br />
+Samples: {samples} <br />
+Samples/sec: {samples / time}
+<br /><br />
 
-</Chart></div>
+<div class="chart">
+	<Chart x1={0} x2={time} y1={0} y2={maxy}>
+		<Grid horizontal count={5} let:value let:last>
+			<div class="grid-line horizontal" style="display:flex;justify-content:space-between">
+				<span style="position:relative">{value}{last ? ' ticks/sec' : ''}</span>
+				<span style="position:relative">
+					{+(value / posfactor).toFixed(0)}{last ? ' ticks' : ''}
+				</span>
+			</div>
+		</Grid>
 
+		<Grid vertical count={5} let:value let:last>
+			<div class="grid-line vertical"></div>
+			<span class="time-label">{value}</span>
+		</Grid>
+
+		<Svg>
+			<SvgLine {data} x={(p) => p.time} y={(p) => p.velocity} let:d>
+				<path class="velocity" {d} />
+			</SvgLine>
+
+			<SvgLine {data} x={(p) => p.time} y={(p) => p.position * posfactor} let:d>
+				<path class="position" {d} />
+			</SvgLine>
+
+			<SvgLine {data} x={(p) => p.time} y={(p) => p.acceleration} let:d>
+				<path class="acceleration" {d} />
+			</SvgLine>
+		</Svg>
+
+		<Quadtree {data} x={(d) => d.time} y={(d) => d.velocity} let:closest>
+			{#if closest}
+				<Point x={closest.time} y={closest.velocity}>
+					<div class="focus"></div>
+					<div class="tooltip" style="transform: translate(-{pc(closest.time)}%,0)">
+						<strong>{+closest.velocity.toFixed(2)} tps</strong>
+						<span>{+closest.position.toFixed(0)} ticks</span>
+						<span>{+closest.acceleration.toFixed(2)} ticks/s/s</span>
+						<span>{+closest.time.toFixed(2)}</span>
+					</div>
+				</Point>
+			{/if}
+		</Quadtree>
+	</Chart>
+</div>
 
 <style>
-path.velocity {
+	path.velocity {
 		stroke: #ff3e00;
 		stroke-linejoin: round;
 		stroke-linecap: round;
@@ -96,9 +163,62 @@ path.velocity {
 		fill: none;
 	}
 
+	path.position {
+		stroke: #00ff48;
+		stroke-linejoin: round;
+		stroke-linecap: round;
+		stroke-width: 2px;
+		fill: none;
+	}
+
+	path.acceleration {
+		stroke: #1e00ff;
+		stroke-linejoin: round;
+		stroke-linecap: round;
+		stroke-width: 2px;
+		fill: none;
+	}
+
 	.chart {
-			height: 400px;
-		}
+		height: 400px;
+	}
+
+	.grid-line {
+		position: relative;
+		display: block;
+	}
+
+	.grid-line.horizontal {
+		width: calc(100% + 2em);
+		left: -2em;
+		border-bottom: 1px dashed #ccc;
+	}
+
+	.grid-line.vertical {
+		height: 100%;
+		border-left: 1px dashed #ccc;
+	}
+
+	.grid-line span {
+		position: absolute;
+		left: 0;
+		bottom: 2px;
+		line-height: 1;
+		font-family: sans-serif;
+		font-size: 14px;
+		color: #999;
+	}
+
+	.time-label {
+		position: absolute;
+		width: 4em;
+		left: -2em;
+		bottom: -30px;
+		font-family: sans-serif;
+		font-size: 14px;
+		color: #999;
+		text-align: center;
+	}
 
 	header {
 		max-width: 56rem;
