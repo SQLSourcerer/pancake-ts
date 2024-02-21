@@ -1,13 +1,28 @@
 <script lang="ts">
 	import CarbonTracker from '../examples/data/0/Ex0.svelte';
 	import Examples from '../examples/data/Examples.svelte';
+
+	import Chart from '$lib/components/Chart.svelte';
+	import { MotionProfile } from '$lib/model/motion-profile';
+	import SvgLine from '$lib/components/SvgLine.svelte';
+	import Svg from '$lib/components/Svg.svelte';
+
+	let maxAccel = 0.01;
+	let maxVelocity = 2;
+	let distance = 4300;
+	let startingVelocity = 800;
+
+	$: profile = new MotionProfile(maxAccel,maxVelocity,distance,startingVelocity);
+	$: time = profile.totalProfileTime;
+	$: maxy = profile.profileVelocity(time/2.0);
+	$: data = [...Array(Math.round(time * 10)).keys()].map(k=>k/10.0).map(t=>({time:t,velocity:profile.profileVelocity(t)}))
 </script>
 
 <svelte:head>
 	<title>Pancake • Charts for Svelte apps</title>
 </svelte:head>
 
-<header>
+<!-- <header>
 	<h1>
 		Pancake
 		<small>Responsive charts. JavaScript optional.</small>
@@ -26,25 +41,65 @@
 			>Here's how.</a
 		>
 	</p>
-</header>
+</header> -->
 
-<section class="hero">
+<!-- <section class="hero">
 	<CarbonTracker />
-</section>
+</section> -->
 
-<section>
+<!-- <section>
 	<h2>Usage</h2>
 	<p>Documentation is TODO. In the meantime, here are some examples:</p>
-</section>
+</section> -->
 
-<section class="examples">
+<!-- <section class="examples">
 	<h2>Examples</h2>
 	<div class="chart-grid">
 		<Examples />
 	</div>
-</section>
+</section> -->
+<label>
+	Max Accel:
+	<input type="text" bind:value={maxAccel} /></label>
+<br />
+	<label>
+		Max velocity:
+		<input type="text" bind:value={maxVelocity} /></label>
+		<br />
+		<label>
+			Distance:
+			<input type="text" bind:value={distance} /></label>
+
+			<br />
+			<label>
+				Starting velocity:
+				<input type="text" bind:value={startingVelocity} /></label>
+
+<div class="chart"><Chart x1={0} x2={time} y1={0} y2={maxy}>
+	<Svg><SvgLine {data}
+	x={p=>p.time}
+	y={p=>p.velocity}
+	let:d
+	>
+<path class="velocity" {d} />
+</SvgLine></Svg>
+
+</Chart></div>
+
 
 <style>
+path.velocity {
+		stroke: #ff3e00;
+		stroke-linejoin: round;
+		stroke-linecap: round;
+		stroke-width: 2px;
+		fill: none;
+	}
+
+	.chart {
+			height: 400px;
+		}
+
 	header {
 		max-width: 56rem;
 		margin: 0 auto;
