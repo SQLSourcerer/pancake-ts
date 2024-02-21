@@ -22,7 +22,7 @@
 	},
 	"homepage": "https://github.com/Rich-Harris/pancake#readme",
 	"dependencies": {
-		"yootils": "0.3.1"
+		"papaparse": "^5.4.1"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^3.0.0",
