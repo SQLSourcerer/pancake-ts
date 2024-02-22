@@ -1,8 +1,5 @@
 <script lang="ts">
-	import CarbonTracker from '../examples/data/0/Ex0.svelte';
-	import Examples from '../examples/data/Examples.svelte';
-
-	import Chart from '$lib/components/Chart.svelte';
+	import Chart, { getChartContext } from '$lib/components/Chart.svelte';
 	import { MotionProfile } from '$lib/model/motion-profile';
 	import SvgLine from '$lib/components/SvgLine.svelte';
 	import Svg from '$lib/components/Svg.svelte';
@@ -12,21 +9,22 @@
 
 	let maxAccel = 300;
 	let maxVelocity = 400;
-	let distance = 3300;
-	let startingVelocity = 200;
+	let distance = 6000;
+	let startingVelocity = 150;
 
 	const minx = 0;
 
 	$: profile = new MotionProfile(maxAccel, maxVelocity, distance, startingVelocity);
 	$: time = Math.ceil(profile.totalProfileTime);
-	$: samples = Math.ceil(Math.ceil(200 / time) / 5) * 5 * time;
+	$: samples = Math.ceil(Math.ceil(150 / time) / 5) * 5 * time;
 	$: maxx = time;
-	$: maxy = profile.profileVelocity(time / 2.0) * 1.05;
+	$: maxy = profile.profileVelocity(time / 2.0) * 3;
 	$: posfactor =
-		profile.profileVelocity(time / 2.0) / profile.profilePosition(profile.totalProfileTime);
+		(3 * profile.profileVelocity(time / 2.0)) / profile.profilePosition(profile.totalProfileTime);
 	//$: maxy = profile.profilePosition(profile.totalProfileTime);
 	//$: data = [...Array(Math.round(time * 10)).keys()].map(k=>k/10.0).map(t=>({time:t,velocity:profile.profileVelocity(t)}))
-	$: data = [...Array(samples).keys()]
+
+	$: data = [...Array(Number.isNaN(samples) ? 0 : samples).keys()]
 		.map((k) => (Math.ceil(time) * k) / samples)
 		.map((t) => ({
 			time: t,
@@ -109,11 +107,11 @@ Samples/sec: {samples / time}
 <br /><br />
 
 <div class="chart">
-	<Chart x1={0} x2={time} y1={0} y2={maxy}>
+	<Chart x1={0} x2={time} y1={-maxAccel} y2={maxy}>
 		<Grid horizontal count={5} let:value let:last>
 			<div class="grid-line horizontal" style="display:flex;justify-content:space-between">
-				<span style="position:relative">{value}{last ? ' ticks/sec' : ''}</span>
-				<span style="position:relative">
+				<span>{value}{last ? ' ticks/sec' : ''}</span>
+				<span style="left:92%">
 					{+(value / posfactor).toFixed(0)}{last ? ' ticks' : ''}
 				</span>
 			</div>
@@ -143,10 +141,10 @@ Samples/sec: {samples / time}
 				<Point x={closest.time} y={closest.velocity}>
 					<div class="focus"></div>
 					<div class="tooltip" style="transform: translate(-{pc(closest.time)}%,0)">
-						<strong>{+closest.velocity.toFixed(2)} tps</strong>
-						<span>{+closest.position.toFixed(0)} ticks</span>
-						<span>{+closest.acceleration.toFixed(2)} ticks/s/s</span>
-						<span>{+closest.time.toFixed(2)}</span>
+						<span>{+closest.position?.toFixed(0)} ticks</span>
+						<strong>{+closest.velocity?.toFixed(2)} ticks/s</strong>
+						<span>{+closest.acceleration?.toFixed(2)} ticks/s<sup>2</sup></span>
+						<span>{+closest.time?.toFixed(2)}</span>
 					</div>
 				</Point>
 			{/if}

@@ -30,7 +30,12 @@
 <div class="pancake-grid">
 	{#each _ticks as tick, i}
 		<div class="pancake-grid-item" style={style(tick)}>
-			<slot value={tick} first={i === 0} last={i === _ticks.length - 1} />
+			<slot
+				value={tick}
+				first={i === 0}
+				last={i === _ticks.length - 1}
+				position={orientation === HORIZONTAL ? $y_scale(tick) : $x_scale(tick)}
+			/>
 		</div>
 	{/each}
 </div>
