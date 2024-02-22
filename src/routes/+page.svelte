@@ -1,6 +1,10 @@
 <script lang="ts">
 	import Chart, { getChartContext } from '$lib/components/Chart.svelte';
-	import { MotionProfile } from '$lib/model/motion-profile';
+	import {
+		TrigMotionProfile,
+		type MotionProfile,
+		ReversibleMotionProfile
+	} from '$lib/model/motion-profile';
 	import SvgLine from '$lib/components/SvgLine.svelte';
 	import Svg from '$lib/components/Svg.svelte';
 	import Grid from '$lib/components/Grid.svelte';
@@ -14,11 +18,12 @@
 
 	const minx = 0;
 
-	$: profile = new MotionProfile(maxAccel, maxVelocity, distance, startingVelocity);
+	$: profile = ReversibleMotionProfile.Create(maxAccel, maxVelocity, distance, startingVelocity);
 	$: time = Math.ceil(profile.totalProfileTime);
 	$: samples = Math.ceil(Math.ceil(150 / time) / 5) * 5 * time;
 	$: maxx = time;
-	$: maxy = profile.profileVelocity(time / 2.0) * 3;
+	$: miny = profile.minY;
+	$: maxy = profile.maxY;
 	$: posfactor =
 		(3 * profile.profileVelocity(time / 2.0)) / profile.profilePosition(profile.totalProfileTime);
 	//$: maxy = profile.profilePosition(profile.totalProfileTime);
@@ -41,21 +46,21 @@
 		...data.map((a) => ({
 			time: a.time,
 			y: a.acceleration,
-			value: +a.acceleration.toFixed(3),
+			value: +a.acceleration.toFixed(1),
 			units: 'ticks/s²',
 			color: '#000088'
 		})),
 		...data.map((v) => ({
 			time: v.time,
 			y: v.velocity,
-			value: +v.velocity.toFixed(3),
+			value: +v.velocity.toFixed(1),
 			units: 'ticks/s',
 			color: '#880000'
 		})),
 		...data.map((p) => ({
 			time: p.time,
 			y: p.position * posfactor,
-			value: +p.position.toFixed(3),
+			value: +p.position.toFixed(0),
 			units: 'ticks',
 			color: '#008800'
 		}))
@@ -132,11 +137,15 @@ Ramp up time: {+profile.rampUpTime.toFixed(3)} <br />
 Ramp up distance: {+profile.rampUpDistance.toFixed(3)} <br />
 Ramp down time: {+profile.rampDownTime.toFixed(3)} <br />
 Ramp down distance: {+profile.rampDownDistance.toFixed(3)} <br />
+Min Y: {miny} <br />
+Max Y: {maxy} <br />
+Cruise time: {+profile.cruiseTime.toFixed(2)}<br />
+Cruise distance: {+profile.cruiseDistance.toFixed(1)}<br />
 <br />
 
 <div class="chart">
-	<Chart x1={0} x2={time} y1={-maxAccel} y2={maxy}>
-		<Grid horizontal count={5} let:value let:last>
+	<Chart x1={minx} x2={time} y1={miny} y2={maxy}>
+		<Grid horizontal count={6} let:value let:last>
 			<div class="grid-line horizontal" style="display:flex;justify-content:space-between">
 				<span>{value}{last ? ' ticks/sec' : ''}</span>
 				<span style="left:92%">
