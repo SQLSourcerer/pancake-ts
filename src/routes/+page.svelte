@@ -36,6 +36,30 @@
 	const pc = (x: number) => {
 		return (100 * (x - minx)) / (maxx - minx);
 	};
+
+	$: points = [
+		...data.map((a) => ({
+			time: a.time,
+			y: a.acceleration,
+			value: +a.acceleration.toFixed(3),
+			units: 'ticks/s²',
+			color: '#000088'
+		})),
+		...data.map((v) => ({
+			time: v.time,
+			y: v.velocity,
+			value: +v.velocity.toFixed(3),
+			units: 'ticks/s',
+			color: '#880000'
+		})),
+		...data.map((p) => ({
+			time: p.time,
+			y: p.position * posfactor,
+			value: +p.position.toFixed(3),
+			units: 'ticks',
+			color: '#008800'
+		}))
+	];
 </script>
 
 <svelte:head>
@@ -140,15 +164,16 @@ Ramp down distance: {+profile.rampDownDistance.toFixed(3)} <br />
 			</SvgLine>
 		</Svg>
 
-		<Quadtree {data} x={(d) => d.time} y={(d) => d.velocity} let:closest>
+		<Quadtree data={points} x={(d) => d.time} y={(d) => d.y} let:closest>
 			{#if closest}
-				<Point x={closest.time} y={closest.velocity}>
+				<Point x={closest.time} y={closest.y}>
 					<div class="focus"></div>
-					<div class="tooltip" style="transform: translate(-{pc(closest.time)}%,0)">
-						<span>{+closest.position?.toFixed(0)} ticks</span>
-						<strong>{+closest.velocity?.toFixed(2)} ticks/s</strong>
-						<span>{+closest.acceleration?.toFixed(2)} ticks/s<sup>2</sup></span>
-						<span>{+closest.time?.toFixed(2)}</span>
+					<div
+						class="tooltip"
+						style="transform: translate(-{pc(closest.time)}%,0);color:{closest.color}"
+					>
+						<strong style="text-wrap: nowrap">{+closest.time.toFixed(3)} s</strong>
+						<span style="text-wrap: nowrap">{closest.value} {closest.units}</span>
 					</div>
 				</Point>
 			{/if}
