@@ -10,7 +10,7 @@
 	let maxAccel = 300;
 	let maxVelocity = 400;
 	let distance = 6000;
-	let startingVelocity = 150;
+	let startingVelocity = -400;
 
 	const minx = 0;
 
@@ -103,8 +103,12 @@
 
 Total time: {+profile.totalProfileTime.toFixed(4)}<br />
 Samples: {samples} <br />
-Samples/sec: {samples / time}
-<br /><br />
+Samples/sec: {samples / time} <br />
+Ramp up time: {+profile.rampUpTime.toFixed(3)} <br />
+Ramp up distance: {+profile.rampUpDistance.toFixed(3)} <br />
+Ramp down time: {+profile.rampDownTime.toFixed(3)} <br />
+Ramp down distance: {+profile.rampDownDistance.toFixed(3)} <br />
+<br />
 
 <div class="chart">
 	<Chart x1={0} x2={time} y1={-maxAccel} y2={maxy}>
