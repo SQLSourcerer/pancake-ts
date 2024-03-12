@@ -192,7 +192,7 @@ Cruise distance: {+profile.cruiseDistance.toFixed(1)}<br />
 
 <style>
 	path.velocity {
-		stroke: #ff3e00;
+		stroke: #009900;
 		stroke-linejoin: round;
 		stroke-linecap: round;
 		stroke-width: 2px;
@@ -200,7 +200,7 @@ Cruise distance: {+profile.cruiseDistance.toFixed(1)}<br />
 	}
 
 	path.position {
-		stroke: #00ff48;
+		stroke: #0000b6;
 		stroke-linejoin: round;
 		stroke-linecap: round;
 		stroke-width: 2px;
@@ -208,7 +208,7 @@ Cruise distance: {+profile.cruiseDistance.toFixed(1)}<br />
 	}
 
 	path.acceleration {
-		stroke: #1e00ff;
+		stroke: #bc0000;
 		stroke-linejoin: round;
 		stroke-linecap: round;
 		stroke-width: 2px;
