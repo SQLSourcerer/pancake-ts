@@ -16,6 +16,7 @@
 	let maxVelocity = 400;
 	let distance = 6000;
 	let startingVelocity = -400;
+	let startingAccel = 0;
 
 	const minx = 0;
 
@@ -24,7 +25,8 @@
 		maxEndAccel,
 		maxVelocity,
 		distance,
-		startingVelocity
+		startingVelocity,
+		startingAccel
 	);
 	$: time = Math.ceil(profile.totalProfileTime);
 	$: samples = Math.ceil(Math.ceil(600 / time) / 5) * 5 * time;
@@ -138,6 +140,11 @@
 <label>
 	Starting velocity:
 	<input type="text" bind:value={startingVelocity} /></label
+>
+<br />
+<label>
+	Starting acceleration:
+	<input type="text" bind:value={startingAccel} /></label
 >
 <br />
 <br />
