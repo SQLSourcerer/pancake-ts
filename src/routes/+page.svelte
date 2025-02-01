@@ -11,16 +11,23 @@
 	import Quadtree from '$lib/components/Quadtree.svelte';
 	import Point from '$lib/components/Point.svelte';
 
-	let maxAccel = 300;
+	let maxStartAccel = 300;
+	let maxEndAccel = 300;
 	let maxVelocity = 400;
 	let distance = 6000;
 	let startingVelocity = -400;
 
 	const minx = 0;
 
-	$: profile = ReversibleMotionProfile.Create(maxAccel, maxVelocity, distance, startingVelocity);
+	$: profile = ReversibleMotionProfile.Create(
+		maxStartAccel,
+		maxEndAccel,
+		maxVelocity,
+		distance,
+		startingVelocity
+	);
 	$: time = Math.ceil(profile.totalProfileTime);
-	$: samples = Math.ceil(Math.ceil(150 / time) / 5) * 5 * time;
+	$: samples = Math.ceil(Math.ceil(600 / time) / 5) * 5 * time;
 	$: maxx = time;
 	$: miny = profile.minY;
 	$: maxy = profile.maxY;
@@ -108,8 +115,13 @@
 	</div>
 </section> -->
 <label>
-	Max Accel:
-	<input type="text" bind:value={maxAccel} /></label
+	Max Start Accel:
+	<input type="text" bind:value={maxStartAccel} /></label
+>
+<br />
+<label>
+	Max End Accel:
+	<input type="text" bind:value={maxEndAccel} /></label
 >
 <br />
 <label>

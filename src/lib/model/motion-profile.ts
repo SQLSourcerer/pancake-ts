@@ -15,13 +15,15 @@ export interface MotionProfile {
 
 export class ReversibleMotionProfile implements MotionProfile {
 	public static Create(
-		maxAccel: number,
+		maxStartAccel: number,
+		maxEndAccel: number,
 		maxVelocity: number,
 		distance: number,
 		startingVelocity = 0
 	) {
 		return new ReversibleMotionProfile(
-			maxAccel,
+			maxStartAccel,
+			maxEndAccel,
 			maxVelocity,
 			distance,
 			startingVelocity
@@ -32,14 +34,16 @@ export class ReversibleMotionProfile implements MotionProfile {
 	private readonly _signum: number;
 
 	private constructor(
-		maxAccel: number,
+		maxStartAccel: number,
+		maxEndAccel: number,
 		maxVelocity: number,
 		distance: number,
 		startingVelocity = 0
 	) {
 		this._signum = Math.sign(distance);
 		this._profile = new TrigMotionProfile(
-			Math.abs(maxAccel),
+			Math.abs(maxStartAccel),
+			Math.abs(maxEndAccel),
 			Math.abs(maxVelocity),
 			Math.abs(distance),
 			startingVelocity * this._signum
@@ -94,7 +98,8 @@ export class ReversibleMotionProfile implements MotionProfile {
 }
 
 export class TrigMotionProfile implements MotionProfile {
-	private readonly _maxAccel: number;
+	private readonly _maxStartAccel: number;
+	private readonly _maxEndAccel: number;
 	private readonly _maxVelocity: number;
 	private readonly _rampUpTime: number;
 	private readonly _rampDownTime: number;
@@ -105,14 +110,20 @@ export class TrigMotionProfile implements MotionProfile {
 	private readonly _distance: number;
 	private readonly _startingVelocity: number;
 
-	constructor(maxAccel: number, maxVelocity: number, distance: number, startingVelocity = 0) {
+	constructor(
+		maxStartAccel: number,
+		maxEndAccel: number,
+		maxVelocity: number,
+		distance: number,
+		startingVelocity = 0
+	) {
 		this._startingVelocity = startingVelocity;
 		let rampUpDistance = TrigMotionProfile.calcRampDistance(
-			maxAccel,
+			maxStartAccel,
 			startingVelocity,
 			maxVelocity
 		);
-		let rampDownDistance = TrigMotionProfile.calcRampDistance(maxAccel, maxVelocity, 0.0);
+		let rampDownDistance = TrigMotionProfile.calcRampDistance(maxEndAccel, maxVelocity, 0.0);
 		// let rampDistance = MotionProfile.calcRampDistance(maxAccel,maxVelocity);
 		// if (distance < rampDistance * 2) {
 		// 	maxVelocity = Math.sqrt((maxAccel * distance) / 2);
@@ -120,15 +131,23 @@ export class TrigMotionProfile implements MotionProfile {
 		// }
 		if (distance < rampUpDistance + rampDownDistance) {
 			maxVelocity =
-				Math.sqrt(maxAccel * distance + startingVelocity * startingVelocity) / Math.sqrt(2);
+				Math.sqrt(maxStartAccel * distance + startingVelocity * startingVelocity) / Math.sqrt(2);
 		}
-		rampUpDistance = TrigMotionProfile.calcRampDistance(maxAccel, startingVelocity, maxVelocity);
-		rampDownDistance = TrigMotionProfile.calcRampDistance(maxAccel, maxVelocity, 0.0);
+		rampUpDistance = TrigMotionProfile.calcRampDistance(
+			maxStartAccel,
+			startingVelocity,
+			maxVelocity
+		);
+		rampDownDistance = TrigMotionProfile.calcRampDistance(maxEndAccel, maxVelocity, 0.0);
 		this._rampUpDistance = rampUpDistance;
 		this._rampDownDistance = rampDownDistance;
-		this._rampUpTime = TrigMotionProfile.calcRampTime(maxAccel, maxVelocity - startingVelocity);
-		this._rampDownTime = TrigMotionProfile.calcRampTime(maxAccel, maxVelocity);
-		this._maxAccel = maxAccel;
+		this._rampUpTime = TrigMotionProfile.calcRampTime(
+			maxStartAccel,
+			maxVelocity - startingVelocity
+		);
+		this._rampDownTime = TrigMotionProfile.calcRampTime(maxEndAccel, maxVelocity);
+		this._maxStartAccel = maxStartAccel;
+		this._maxEndAccel = maxEndAccel;
 		this._maxVelocity = maxVelocity;
 		this._cruiseDistance = distance - this._rampUpDistance - this._rampDownDistance;
 		this._cruiseTime = this._cruiseDistance / maxVelocity;
@@ -194,11 +213,12 @@ export class TrigMotionProfile implements MotionProfile {
 	private rangeResult(
 		time: number,
 		middleValue: number,
-		callback: (time: number, deltav: number) => number,
+		callbackStart: (time: number, deltav: number) => number,
+		callbackEnd: (time: number, deltav: number) => number,
 		endState: number
 	) {
 		if (time < this._rampUpTime) {
-			return callback(time, this._maxVelocity - this._startingVelocity);
+			return callbackStart(time, this._maxVelocity - this._startingVelocity);
 		} else if (time >= this._rampUpTime && time <= this._cruiseTime + this._rampUpTime) {
 			return middleValue;
 		} else if (
@@ -206,7 +226,7 @@ export class TrigMotionProfile implements MotionProfile {
 			time < this._cruiseTime + this._rampUpTime + this._rampDownTime
 		) {
 			return (
-				-callback(
+				-callbackEnd(
 					time - this._rampUpTime - this._cruiseTime - this._rampDownTime,
 					this._maxVelocity
 				) + endState
@@ -225,7 +245,10 @@ export class TrigMotionProfile implements MotionProfile {
 			time,
 			this._maxVelocity * (time - this._rampUpTime) + this._rampUpDistance,
 			(x, deltav) =>
-				TrigMotionProfile.trigRamp2ndIntegral(x, this._maxAccel, deltav) +
+				TrigMotionProfile.trigRamp2ndIntegral(x, this._maxStartAccel, deltav) +
+				(this._maxVelocity - deltav) * x,
+			(x, deltav) =>
+				TrigMotionProfile.trigRamp2ndIntegral(x, this._maxEndAccel, deltav) +
 				(this._maxVelocity - deltav) * x,
 			this._distance
 		);
@@ -237,7 +260,10 @@ export class TrigMotionProfile implements MotionProfile {
 			time,
 			this._maxVelocity,
 			(x, deltav) =>
-				TrigMotionProfile.trigRamp1stIntegral(x, this._maxAccel, deltav) +
+				TrigMotionProfile.trigRamp1stIntegral(x, this._maxStartAccel, deltav) +
+				(this._maxVelocity - deltav),
+			(x, deltav) =>
+				TrigMotionProfile.trigRamp1stIntegral(x, this._maxEndAccel, deltav) +
 				(this._maxVelocity - deltav),
 			0
 		);
@@ -247,7 +273,8 @@ export class TrigMotionProfile implements MotionProfile {
 		return this.rangeResult(
 			time,
 			0.0,
-			(x, deltav) => TrigMotionProfile.trigRamp(x, this._maxAccel, deltav),
+			(x, deltav) => TrigMotionProfile.trigRamp(x, this._maxStartAccel, deltav),
+			(x, deltav) => TrigMotionProfile.trigRamp(x, this._maxEndAccel, deltav),
 			0
 		);
 	}
