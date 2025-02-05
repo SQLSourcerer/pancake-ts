@@ -132,14 +132,12 @@ export class TrigMotionProfile implements MotionProfile {
 			maxVelocity
 		);
 		let rampDownDistance = TrigMotionProfile.calcRampDistance(maxEndAccel, maxVelocity, 0.0);
-		// let rampDistance = MotionProfile.calcRampDistance(maxAccel,maxVelocity);
-		// if (distance < rampDistance * 2) {
-		// 	maxVelocity = Math.sqrt((maxAccel * distance) / 2);
-		// 	rampDistance = (maxVelocity * maxVelocity) / maxAccel;
-		// }
 		if (distance < rampUpDistance + rampDownDistance) {
-			maxVelocity =
-				Math.sqrt(maxStartAccel * distance + startingVelocity * startingVelocity) / Math.sqrt(2);
+			maxVelocity = Math.sqrt(
+				(maxStartAccel * maxEndAccel * distance +
+					startingVelocity * startingVelocity * maxEndAccel) /
+					(maxStartAccel + maxEndAccel)
+			);
 		}
 		rampUpDistance = TrigMotionProfile.calcRampDistance(
 			maxStartAccel,
