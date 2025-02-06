@@ -160,6 +160,7 @@ Min Y: {miny} <br />
 Max Y: {maxy} <br />
 Cruise time: {+profile.cruiseTime.toFixed(2)}<br />
 Cruise distance: {+profile.cruiseDistance.toFixed(1)}<br />
+Profile max vel: {profile.maxVelocity}<br />
 <br />
 
 <div class="chart">
