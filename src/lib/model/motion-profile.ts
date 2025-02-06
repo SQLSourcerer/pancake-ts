@@ -28,8 +28,7 @@ export class ReversibleMotionProfile implements MotionProfile {
 			maxEndAccel,
 			maxVelocity,
 			distance,
-			startingVelocity,
-			startingAccel
+			startingVelocity
 		) as MotionProfile;
 	}
 
@@ -41,8 +40,7 @@ export class ReversibleMotionProfile implements MotionProfile {
 		maxEndAccel: number,
 		maxVelocity: number,
 		distance: number,
-		startingVelocity = 0,
-		startingAccel = 0
+		startingVelocity = 0
 	) {
 		this._signum = Math.sign(distance);
 		this._profile = new TrigMotionProfile(
