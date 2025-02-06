@@ -20,8 +20,7 @@ export class ReversibleMotionProfile implements MotionProfile {
 		maxEndAccel: number,
 		maxVelocity: number,
 		distance: number,
-		startingVelocity = 0,
-		startingAccel = 0
+		startingVelocity = 0
 	) {
 		return new ReversibleMotionProfile(
 			maxStartAccel,
